@@ -1,0 +1,34 @@
+name: refurb-tracker
+
+on:
+  schedule:
+    # GitHub's minimum; in practice runs are often delayed 5-30 min at busy times.
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write   # to commit state.json back
+
+concurrency:
+  group: refurb-tracker
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Poll Apple refurb store
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        # jitter so we never hit Apple on an exact :00/:05 boundary
+        run: python3 refurb_tracker.py check --jitter-start 45
+      - name: Commit state if it changed
+        run: |
+          git config user.name "refurb-tracker[bot]"
+          git config user.email "refurb-tracker@users.noreply.github.com"
+          git add state.json
+          if git diff --cached --quiet; then echo "state unchanged"; exit 0; fi
+          git commit -m "state: $(date -u +%Y-%m-%dT%H:%MZ)"
+          git pull --rebase --quiet && git push

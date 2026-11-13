@@ -1,0 +1,14 @@
+{
+  "filters": {
+    "chips": ["M4", "M4 Pro"],
+    "min_memory_gb": null,
+    "min_storage_gb": null,
+    "max_price": null
+  },
+  "alert_on": {"new": true, "restock": true, "price_drop": true},
+  "poll": {"interval_seconds": 300, "jitter_seconds": 60},
+  "notifiers": [
+    {"type": "console"},
+    {"type": "ntfy", "priority": "high"}
+  ]
+}
