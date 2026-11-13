@@ -1,7 +1,7 @@
 # Mac mini refurb tracker
 
 Watches Apple's US Certified Refurbished store for **M4 / M4 Pro Mac minis** and
-pushes a phone alert (ntfy) when one is newly listed, comes back in stock, or
+pushes a phone alert (ntfy), checking every 2 minutes from your Mac, when one is newly listed, comes back in stock, or
 drops in price. Python 3 standard library only; no dependencies.
 
 ## How it works
@@ -56,7 +56,48 @@ A listing with an unknown memory or storage value passes the filter. A
 borderline alert is better than a missed one. `alert_on` turns each event type
 on or off.
 
-## Running on GitHub Actions
+## Running on your Mac (launchd) — current setup
+
+A per-user launchd agent runs `check` every 2 minutes (plus up to 30 s of random
+delay) while the Mac is awake. If the Mac was asleep, launchd runs one check on
+wake instead of all the missed ones. Nothing runs while the Mac is asleep or off.
+
+Start (or restart after changing the interval or topic):
+
+```bash
+NTFY_TOPIC=your-topic ~/Documents/mac-refurb-tracker/launchd/install.sh
+```
+
+Stop and remove:
+
+```bash
+~/Documents/mac-refurb-tracker/launchd/uninstall.sh
+```
+
+Is it running? / what did it see?
+
+```bash
+launchctl print gui/$(id -u)/local.mac-refurb-tracker | grep -E "state =|runs =|last exit"
+```
+
+```bash
+tail -f ~/Library/Logs/mac-refurb-tracker.log
+```
+
+- The agent's plist is `~/Library/LaunchAgents/local.mac-refurb-tracker.plist`
+  (mode 600, since it holds the ntfy topic).
+- State: `state.local.json` (gitignored), separate from the Actions
+  `state.json`.
+- Change the interval with `INTERVAL=180 NTFY_TOPIC=... ./launchd/install.sh`.
+  Please don't go below 120 s.
+- Python: whatever `python3` resolves to at install time. Pass `PYTHON=/path`
+  to pick another one.
+
+## Running on GitHub Actions (backup, disabled)
+
+> **Currently disabled.** The tracker now runs on the Mac (see below), because
+> GitHub's scheduler was 5–30 min late. Leave this off while launchd is running:
+> the two keep separate state, so running both can send duplicate alerts.
 
 `.github/workflows/tracker.yml` runs `check` every 5 minutes and commits
 `state.json` back **only when it changes** (a listing appears or disappears, or
@@ -103,6 +144,8 @@ Caveats:
 | `tls.py` | CA bundle fallback for python.org Python builds |
 | `config.json` | filters, alert types, poll interval, notifiers |
 | `state.json` | seen listings (committed by Actions) |
+| `state.local.json` | seen listings for the launchd agent (gitignored) |
+| `launchd/` | install / uninstall the Mac agent |
 | `test_tracker.py` | offline tests with a fake grid page |
 
 Not yet verified against a live Mac mini tile, because none were listed while
