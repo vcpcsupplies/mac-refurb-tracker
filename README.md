@@ -65,13 +65,13 @@ wake instead of all the missed ones. Nothing runs while the Mac is asleep or off
 Start (or restart after changing the interval or topic):
 
 ```bash
-NTFY_TOPIC=your-topic ~/Documents/mac-refurb-tracker/launchd/install.sh
+NTFY_TOPIC=your-topic ~/mac-refurb-tracker/launchd/install.sh
 ```
 
 Stop and remove:
 
 ```bash
-~/Documents/mac-refurb-tracker/launchd/uninstall.sh
+~/mac-refurb-tracker/launchd/uninstall.sh
 ```
 
 Is it running? / what did it see?
@@ -84,6 +84,11 @@ launchctl print gui/$(id -u)/local.mac-refurb-tracker | grep -E "state =|runs =|
 tail -f ~/Library/Logs/mac-refurb-tracker.log
 ```
 
+- **Keep this folder out of iCloud** (`~/Documents`, `~/Desktop`). With
+  Optimize Mac Storage on, iCloud swaps files for download-on-demand
+  placeholders that the background job can't read. Every run then fails with
+  `Resource deadlock avoided`. That broke the agent on 2026-11-13, which is why
+  it now lives at `~/mac-refurb-tracker`. `install.sh` refuses synced paths.
 - The agent's plist is `~/Library/LaunchAgents/local.mac-refurb-tracker.plist`
   (mode 600, since it holds the ntfy topic).
 - State: `state.local.json` (gitignored), separate from the Actions

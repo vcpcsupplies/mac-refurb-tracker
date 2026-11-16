@@ -8,6 +8,15 @@ DIR="$(cd "$(dirname "$0")/.." && pwd)"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 LOG="$HOME/Library/Logs/mac-refurb-tracker.log"
 PY="${PYTHON:-$(command -v python3)}"
+
+# iCloud "Optimize Mac Storage" evicts files under ~/Documents and ~/Desktop to
+# placeholders that a launchd background job cannot read (fails with
+# "Resource deadlock avoided"). Refuse to install from a synced folder.
+case "$DIR" in
+  "$HOME/Documents"*|"$HOME/Desktop"*|"$HOME/Library/Mobile Documents"*)
+    echo "refusing: $DIR is iCloud-synced; move the folder (e.g. to ~/mac-refurb-tracker) first" >&2
+    exit 1 ;;
+esac
 : "${NTFY_TOPIC:?set NTFY_TOPIC to your ntfy topic}"
 INTERVAL="${INTERVAL:-120}"
 
